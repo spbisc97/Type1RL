@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Project specific
+logs/
+models/
+results/
+tensorboard/
+*.log
+*.zip
+*.pkl
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Stable-baselines specific
+*.monitor.csv
+*.vec_normalize.pkl
+*.zip
+
+# Simglucose specific
+simglucose/examples/*.csv
+simglucose/examples/*.png 
