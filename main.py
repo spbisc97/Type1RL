@@ -3,6 +3,7 @@ from pathlib import Path
 import gymnasium as gym
 
 from environment import create_env, make_env_mod
+from bergman_env import make_bergman_env
 from agents.sac_agent import train_sac, load_sac
 from agents.ppo_agent import train_ppo, load_ppo
 from agents.td3_agent import train_td3, load_td3
@@ -19,6 +20,9 @@ def parse_args():
     parser.add_argument('--agent', type=str, default='sac', 
                       choices=['sac', 'ppo', 'td3', 'dqn'],
                       help='Agent type: sac, ppo, td3, or dqn')
+    parser.add_argument('--env', type=str, default='bergman',
+                      choices=['simglucose', 'bergman'],
+                      help='Environment: simglucose or bergman')
     parser.add_argument('--model-path', type=str, 
                       default=str(MODELS_DIR / 'model.zip'),
                       help='Path to save/load the model')
@@ -27,11 +31,19 @@ def parse_args():
                       help='Total timesteps for training')
     return parser.parse_args()
 
+def create_env_by_type(env_type: str, discrete_actions: bool = False):
+    """Create environment based on type"""
+    if env_type == 'bergman':
+        return make_bergman_env(CGM_hist_len=GCM_hist_len)
+    else:  # simglucose
+        return make_env_mod(CGM_hist_len=GCM_hist_len, discrete_actions=discrete_actions)
+
 def train(args):
     """Train the selected agent"""
-    env = make_env_mod(CGM_hist_len=GCM_hist_len,discrete_actions=args.agent=='dqn')
+    env = create_env_by_type(args.env, discrete_actions=args.agent=='dqn')
     
     print(f"Starting training for {args.timesteps} timesteps...")
+    print(f"Environment: {args.env}")
     print(f"Observation space: {env.observation_space}")
     print(f"Action space: {env.action_space}")
     
@@ -49,7 +61,7 @@ def train(args):
     
 def evaluate(args):
     """Evaluate the trained agent"""
-    env = make_env_mod(CGM_hist_len=GCM_hist_len)
+    env = create_env_by_type(args.env, discrete_actions=args.agent=='dqn')
     
     print(f"Loading model from {args.model_path}")
     if args.agent == 'ppo':
@@ -77,7 +89,7 @@ def evaluate(args):
         
         while not done:
             action, _ = model.predict(obs, deterministic=True)
-            cgm_values.append(obs[0][0])  # Store CGM value
+            cgm_values.append(obs[0])  # Store CGM value
             actions.append(action[0])     # Store action
             
             obs, reward, done, truncated, _ = env.step(action)
@@ -93,8 +105,8 @@ def evaluate(args):
             rewards=rewards,
             cgm_values=cgm_values,
             actions=actions,
-            save_path=RESULTS_DIR / f"{args.agent}_episode_{episode+1}.png",
-            title=f'Episode {episode+1}'
+            save_path=RESULTS_DIR / f"{args.agent}_{args.env}_episode_{episode+1}.png",
+            title=f'{args.env} - Episode {episode+1}'
         )
     
     # Print and plot evaluation results
@@ -107,8 +119,8 @@ def evaluate(args):
     # Plot training results
     plot_training_results(
         log_path=LOGS_DIR / f"{args.agent}_results",
-        save_path=RESULTS_DIR / f"{args.agent}_training_results.png",
-        title=f'{args.agent.upper()} Training Results'
+        save_path=RESULTS_DIR / f"{args.agent}_{args.env}_training_results.png",
+        title=f'{args.agent.upper()} Training Results on {args.env}'
     )
     
     env.close()
