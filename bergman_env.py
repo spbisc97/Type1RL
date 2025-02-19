@@ -47,7 +47,7 @@ class BergmanTrueDynamics(nn.Module):
         self.p3 = p3
         self.G_b = G_b
         self.n = n
-        self.range = 600.0  # Range for clipping
+        self.range = 100.0  # Range for clipping
 
     def forward(self, t, state, D=0, U=0):
         r=self.range

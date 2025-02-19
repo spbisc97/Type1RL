@@ -4,6 +4,9 @@ matplotlib>=3.7.2
 scipy>=1.11.0
 gymnasium>=0.29.1
 stable-baselines3>=2.2.1
+swig  # Required for Box2D
+gymnasium[box2d]  # LunarLander environment
+tensorboard
 # pytorch>=2.0.0
 # torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 # -e git+https://github.com/jxx123/simglucose.git#egg=simglucose 

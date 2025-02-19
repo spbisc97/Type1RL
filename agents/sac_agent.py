@@ -33,7 +33,7 @@ def create_sac_agent(env, tensorboard_log=True):
     # )
     action_noise = OrnsteinUhlenbeckActionNoise(
         mean=np.zeros(n_actions),
-        sigma=1 * np.ones(n_actions)
+        sigma=0.1 * np.ones(n_actions)
     )
     
     # Create the SAC agent

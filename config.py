@@ -34,7 +34,7 @@ PPO_CONFIG = {
     "max_grad_norm": 0.5,
     "vf_coef": 0.5,
     "policy_kwargs": dict(
-        net_arch=dict(pi=[64, 64], qf=[64, 64])
+        net_arch=dict(pi=[300, 300], qf=[300, 300])
     )
 }
 
@@ -49,7 +49,7 @@ DQN_CONFIG = {
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
     "policy_kwargs": dict(
-        net_arch=[64, 64]
+        net_arch=[300, 300]
     )
 }
 
@@ -67,7 +67,7 @@ SAC_CONFIG = {
     "gradient_steps": -1,
     "policy_kwargs": dict(
         activation_fn=ReLU,
-        net_arch=dict(pi=[64, 64], qf=[64, 64])
+        net_arch=dict(pi=[300, 300], qf=[300, 300])
     )
 }
 
@@ -85,7 +85,7 @@ TD3_CONFIG = {
     "target_policy_noise": 0.2,  # TD3 specific
     "target_noise_clip": 0.5,    # TD3 specific
     "policy_kwargs": dict(
-        net_arch=dict(pi=[128, 64], qf=[128, 64])
+        net_arch=dict(pi=[300, 300], qf=[300, 300])
     )
 }
 

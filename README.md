@@ -129,6 +129,39 @@ Where dimensions are represented as:
 - L: Length
 - T: Time
 
+## Testing Agents
+
+The project includes a test environment (`test_env.py`) that uses the LunarLander environment from Gymnasium to verify that the RL algorithms are working correctly. This is useful for:
+
+1. Validating agent implementations
+2. Testing training pipeline
+3. Debugging environment wrappers
+4. Verifying algorithm hyperparameters
+
+To run the tests:
+```bash
+# Install Box2D dependencies first
+pip install swig
+pip install "gymnasium[box2d]"
+
+# Run the test environment
+python test_env.py
+```
+
+The test script will:
+- Train each agent (SAC, PPO, TD3, DQN) on LunarLander
+- Use shorter training duration (100k steps)
+- Print training progress and rewards
+- Save trained models to the models directory
+
+A successful test indicates that:
+- The agent implementation is correct
+- The training pipeline works
+- The environment wrappers are functioning
+- The hyperparameters are reasonable
+
+This is particularly useful when implementing new features or debugging issues with the T1D environment.
+
 ## Contributing
 
 1. Fork the repository
@@ -140,3 +173,47 @@ Where dimensions are represented as:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Environments
+
+The project includes two different simulation environments:
+
+### 1. Simglucose Environment
+Based on the UVA/Padova T1D Simulator, this environment provides:
+- Realistic glucose-insulin dynamics
+- Multiple patient scenarios
+- Meal disturbances
+- CGM sensor noise
+- Insulin pump dynamics
+
+### 2. Bergman Minimal Model Environment
+A simpler mathematical model based on the Bergman equations:
+- Three state variables (Glucose, Insulin effect, Plasma insulin)
+- Configurable model parameters
+- Meal disturbances
+- More computationally efficient
+
+Both environments follow the Gymnasium interface and provide:
+- Observation: CGM history (configurable length)
+- Action: Insulin infusion rate
+- Reward: Based on blood glucose control
+- Info: Additional state information
+
+## Project Structure
+
+```
+├── agents/                 # RL agent implementations
+│   ├── sac_agent.py       # Soft Actor-Critic
+│   ├── ppo_agent.py       # Proximal Policy Optimization
+│   ├── td3_agent.py       # Twin Delayed DDPG
+│   └── dqn_agent.py       # Deep Q-Network
+├── utils/                 
+│   ├── plotting.py        # Visualization utilities
+│   └── callbacks.py       # Training callbacks
+├── environment.py         # Simglucose environment wrapper
+├── bergman_env.py        # Bergman model environment
+├── test_env.py           # Test environment (LunarLander)
+├── config.py             # Configuration parameters
+├── main.py               # Main training/evaluation script
+└── requirements.txt      # Python dependencies
+```
