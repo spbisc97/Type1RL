@@ -169,7 +169,7 @@ class BergmanEnv(gym.Env):
         # glucose needs to be centered around 0
         
         # reward is the negative of the glucose value
-        return -glucose**2
+        return -glucose**2 + 10
     
             
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
@@ -225,7 +225,7 @@ class BergmanEnv(gym.Env):
         super().reset(seed=seed)
         
         # Initialize with more reasonable values
-        initial_glucose = np.random.uniform(4.0, 20.0)  # In mmol/L (roughly 70-180 mg/dL)
+        initial_glucose = np.random.uniform(0.0, 20.0)  # In mmol/L (roughly 70-180 mg/dL)
         self.state = np.array([
             initial_glucose,
             0.0,  # Initial insulin effect
