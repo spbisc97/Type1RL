@@ -99,6 +99,7 @@ class BergmanEnv(gym.Env):
         
         # Initialize Bergman model
         self.model = BergmanTrueDynamics()
+        self.range = self.model.range
         
         # Time settings
         self.dt = dt  # Time step (minutes)
@@ -114,8 +115,8 @@ class BergmanEnv(gym.Env):
         
         # Define observation space (glucose history)
         self.observation_space = spaces.Box(
-            low=-self.r,  # Minimum range glucose value
-            high=self.r,  # Maximum range glucose value
+            low=-self.range,  # Minimum range glucose value
+            high=self.range,  # Maximum range glucose value
             shape=(CGM_hist_len,),
             dtype=np.float32
         )
@@ -123,7 +124,7 @@ class BergmanEnv(gym.Env):
         # Define action space (insulin infusion rate)
         self.action_space = spaces.Box(
             low=np.array([0.0]),
-            high=np.array([1.0]),  # Reduced from 100 to 1
+            high=np.array([20.0]),  # Reduced from 100 to 1
             dtype=np.float32
         )
         
@@ -168,7 +169,7 @@ class BergmanEnv(gym.Env):
         # glucose needs to be centered around 0
         
         # reward is the negative of the glucose value
-        return glucose**2
+        return -glucose**2
     
             
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
@@ -192,9 +193,9 @@ class BergmanEnv(gym.Env):
         # Update internal state
         self.state = (state_tensor + (k1 + 2*k2 + 2*k3 + k4) * self.dt/6).numpy()
         # Clamp glucose to prevent instability
-        self.state[0] = np.clip(self.state[0], -self.r, self.r)
-        self.state[1] = np.clip(self.state[1], -self.r, self.r)
-        self.state[2] = np.clip(self.state[2], -self.r, self.r)
+        self.state[0] = np.clip(self.state[0], -self.range, self.range)
+        self.state[1] = np.clip(self.state[1], -self.range, self.range)
+        self.state[2] = np.clip(self.state[2], -self.range, self.range)
         
         
         # Update glucose history
