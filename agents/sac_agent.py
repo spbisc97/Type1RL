@@ -40,7 +40,7 @@ def create_sac_agent(env, tensorboard_log=True):
     model = SAC(
         "MlpPolicy",
         env,
-        action_noise=action_noise,
+        action_noise=False,
         tensorboard_log=str(LOGS_DIR) if tensorboard_log else None,
         device=device,
         **SAC_CONFIG

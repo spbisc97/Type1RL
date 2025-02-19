@@ -26,9 +26,9 @@ GAMMA = 0.99
 PPO_CONFIG = {
     "learning_rate": 3e-4,
     "n_steps": 2048,
-    "batch_size": 32,
+    "batch_size": 128,
     "n_epochs": 10,
-    "gae_lambda": 0.95,
+    "gae_lambda": 0.99,
     "clip_range": 0.2,
     "ent_coef": 0.0,
     "max_grad_norm": 0.5,
@@ -43,7 +43,7 @@ DQN_CONFIG = {
     "learning_rate": 1e-4,
     "buffer_size": 100000,
     "learning_starts": 5000,
-    "batch_size": 32,
+    "batch_size": 128,
     "target_update_interval": 100,
     "exploration_fraction": 0.1,
     "exploration_initial_eps": 1.0,
@@ -55,12 +55,12 @@ DQN_CONFIG = {
 
 # SAC specific settings
 SAC_CONFIG = {
-    "learning_rate": 1e-4,
+    "learning_rate": 1e-3,
     "buffer_size": 100000,
     "learning_starts": 5000,
-    "batch_size": 64,
+    "batch_size": 128,
     "tau": 0.005,
-    "gamma": 0.95,
+    "gamma": 0.99,
     "ent_coef": "auto",
     "target_entropy": "auto",
     "train_freq": (1, "episode"),
@@ -76,9 +76,9 @@ TD3_CONFIG = {
     "learning_rate": 3e-4,
     "buffer_size": 100000,
     "learning_starts": 1000,
-    "batch_size": 32,
+    "batch_size": 128,
     "tau": 0.005,
-    "gamma": 0.95,
+    "gamma": 0.99,
     "train_freq": (1, "episode"),
     "gradient_steps":-1,
     "policy_delay": 2,  # TD3 specific
