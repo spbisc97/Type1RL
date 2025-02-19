@@ -113,16 +113,13 @@ The Bergman minimal model uses the following parameters to simulate glucose-insu
 
 | Parameter | Description | Value and Unit | Dimensions (M,L,T) |
 |-----------|-------------|----------------|-------------------|
-| p1 | Insulin-independent glucose disappearance rate (glucose effectiveness, SG) | ~10⁻² min⁻¹ | (0,0,-1) |
-| p2 | Rate constant of tissue glucose uptake ability decrease | ~10⁻² min⁻¹ | (0,0,-1) |
-| p3 | Insulin-dependent increase in tissue glucose uptake ability | ~10⁻⁵ min⁻² (μU/ml)⁻¹ | (-1,3,-2) |
-| n | Disappearance rate of endogenous insulin | ~10⁻¹ min⁻¹ | (0,0,-1) |
-| γ | Rate of second phase endogenous insulin secretion | ~10⁻²–10⁻³ (μU/ml) min⁻² | (0,0,-2) |
-| Gb | Baseline plasma glucose | ~100 mg/dl | (1,-3,0) |
-| G0 | Initial glucose concentration during FSIVGTT | ~300 mg/dl | (1,-3,0) |
-| h | Threshold value for second phase insulin secretion | ~100 mg/dl | (1,-3,0) |
-| Ib | Baseline plasma insulin | ~10 μU/ml | (1,-3,0) |
-| I0 | Initial insulin concentration | ~30 μU/ml | (1,-3,0) |
+| p1 | Insulin-independent glucose disappearance rate (glucose effectiveness, SG) | 2.3e-6 min⁻¹ | (0,0,-1) |
+| p2 | Rate constant of tissue glucose uptake ability decrease | 0.088 min⁻¹ | (0,0,-1) |
+| p3 | Insulin-dependent increase in tissue glucose uptake ability | 0.63e-3 min⁻² (μU/ml)⁻¹ | (-1,3,-2) |
+| n | Disappearance rate of endogenous insulin | 0.09 min⁻¹ | (0,0,-1) |
+| G_b | Baseline plasma glucose | 50 mg/dl | (1,-3,0) |
+
+Note: These values are the ones currently used in the implementation (see `bergman_env.py`). They may need further tuning and validation against clinical data.
 
 Where dimensions are represented as:
 - M: Mass
