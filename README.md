@@ -107,6 +107,28 @@ Key parameters can be modified in `config.py`:
 - Buffer sizes
 - Other algorithm-specific parameters
 
+## Bergman Minimal Model Parameters
+
+The Bergman minimal model uses the following parameters to simulate glucose-insulin dynamics:
+
+| Parameter | Description | Value and Unit | Dimensions (M,L,T) |
+|-----------|-------------|----------------|-------------------|
+| p1 | Insulin-independent glucose disappearance rate (glucose effectiveness, SG) | ~10⁻² min⁻¹ | (0,0,-1) |
+| p2 | Rate constant of tissue glucose uptake ability decrease | ~10⁻² min⁻¹ | (0,0,-1) |
+| p3 | Insulin-dependent increase in tissue glucose uptake ability | ~10⁻⁵ min⁻² (μU/ml)⁻¹ | (-1,3,-2) |
+| n | Disappearance rate of endogenous insulin | ~10⁻¹ min⁻¹ | (0,0,-1) |
+| γ | Rate of second phase endogenous insulin secretion | ~10⁻²–10⁻³ (μU/ml) min⁻² | (0,0,-2) |
+| Gb | Baseline plasma glucose | ~100 mg/dl | (1,-3,0) |
+| G0 | Initial glucose concentration during FSIVGTT | ~300 mg/dl | (1,-3,0) |
+| h | Threshold value for second phase insulin secretion | ~100 mg/dl | (1,-3,0) |
+| Ib | Baseline plasma insulin | ~10 μU/ml | (1,-3,0) |
+| I0 | Initial insulin concentration | ~30 μU/ml | (1,-3,0) |
+
+Where dimensions are represented as:
+- M: Mass
+- L: Length
+- T: Time
+
 ## Contributing
 
 1. Fork the repository

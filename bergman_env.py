@@ -10,7 +10,36 @@ from typing import Optional, Tuple
 from collections import deque
 
 class BergmanTrueDynamics(nn.Module):
-    def __init__(self, p1=0.0337, p2=0.0209, p3=0.0000876, G_b=4.5, n=0.2659):
+    """
+    Bergman minimal model of glucose-insulin dynamics.
+    The model is described by the following differential equations:
+    
+    dG/dt = -p1 * G - (G + G_b) * X + D
+    dX/dt = -p2 * X + p3 * I
+    dI/dt = U - n * I
+    
+    where:
+    - G is the glucose concentration in mmol/L
+    - X is the insulin effect (arbitrary units)??
+    - I is the plasma insulin concentration in mU/L
+    - D is the meal disturbance (carbs in grams)?
+    - U is the insulin infusion rate (mU/min)??
+    - p1, p2, p3, G_b, and n are model parameters 
+    
+    -p1 is in 1/min? and is the glucose effectiveness? 
+    -p2 is in 1/min? and is the insulin sensitivity?
+    -p3 is in 1/min? and is the insulin effectiveness?
+    -G_b is the basal glucose concentration in mmol/L
+    -n is the insulin clearance rate in 1/min
+    
+    # TODO: Check units and ranges of parameters 
+    # TODO: Use better equations
+    
+    
+    # maybe this could be converted to numpy?
+    """
+    
+    def __init__(self, p1=2.3e-6, p2=0.088, p3=0.63e-3, G_b=50, n=0.09):
         # Using parameters from literature that are more numerically stable
         super().__init__()
         self.p1 = p1
@@ -18,21 +47,36 @@ class BergmanTrueDynamics(nn.Module):
         self.p3 = p3
         self.G_b = G_b
         self.n = n
+        self.range = 600.0  # Range for clipping
 
     def forward(self, t, state, D=0, U=0):
+        r=self.range
         # Ensure all inputs are tensors and clip to prevent instability
-        G = torch.clamp(state[0], min=0.0, max=25.0)  # Glucose in mmol/L
-        X = torch.clamp(state[1], min=0.0, max=1.0)   # Insulin effect
-        I = torch.clamp(state[2], min=0.0, max=10.0)  # Plasma insulin in mU/L
+        G = torch.clamp(state[0], min=-r, max=r)  # Glucose in mmol/L
+        X = torch.clamp(state[1], min=-r, max=r)   # Insulin effect
+        I = torch.clamp(state[2], min=-r, max=r)  # Plasma insulin in mU/L
+        # Ensure all inputs are tensors 
+
+        
+        
         
         # Convert meal disturbance and insulin input to tensors
         D = torch.as_tensor(D, dtype=torch.float32)
         U = torch.as_tensor(U, dtype=torch.float32)
         
         # Calculate derivatives with clipping to prevent extreme values
-        dGdt = torch.clamp(-self.p1 * G - (G + self.G_b) * X + D, min=-10.0, max=10.0)
-        dXdt = torch.clamp(-self.p2 * X + self.p3 * I, min=-1.0, max=1.0)
-        dIdt = torch.clamp(U - self.n * I, min=-5.0, max=5.0)
+        dGdt = torch.clamp(-self.p1 * G - (G + self.G_b) * X + D, min=-r, max=r)
+        dXdt = torch.clamp(-self.p2 * X + self.p3 * I, min=-r, max=r)
+        dIdt = torch.clamp(U - self.n * I, min=-r, max=r)
+        
+        
+        
+        # dimensionality analysis
+        # dGdt = -p1 * G - (G + G_b) * X + D
+        # dXdt = -p2 * X + p3 * I
+        # dIdt = U - n * I
+        
+        
         
         return torch.stack([dGdt, dXdt, dIdt])
 
@@ -58,7 +102,10 @@ class BergmanEnv(gym.Env):
         
         # Time settings
         self.dt = dt  # Time step (minutes)
-        self.simulation_time = simulation_time
+        # total simulation time is 24 hours (1440 minutes)
+        # might this be moved outside of the class?
+        self.simulation_time = simulation_time 
+        
         self.current_time = 0
         
         # Glucose history settings
@@ -67,8 +114,8 @@ class BergmanEnv(gym.Env):
         
         # Define observation space (glucose history)
         self.observation_space = spaces.Box(
-            low=0,
-            high=500,  # Maximum reasonable glucose value
+            low=-self.r,  # Minimum range glucose value
+            high=self.r,  # Maximum range glucose value
             shape=(CGM_hist_len,),
             dtype=np.float32
         )
@@ -82,9 +129,9 @@ class BergmanEnv(gym.Env):
         
         # Meal schedule (time in minutes, carbs in grams)
         self.default_meals = [
-            (7 * 60, 45),    # Breakfast at 7 AM
-            (12 * 60, 75),   # Lunch at 12 PM
-            (18 * 60, 85),   # Dinner at 6 PM
+            (7 * 60, 5),    # Breakfast at 7 AM
+            (12 * 60, 5),   # Lunch at 12 PM
+            (18 * 60, 5),   # Dinner at 6 PM
         ]
         self.meal_schedule = meal_schedule if meal_schedule is not None else self.default_meals
         
@@ -97,7 +144,7 @@ class BergmanEnv(gym.Env):
         for meal_time, meal_size in self.meal_schedule:
             # Simple meal absorption model
             if abs(time - meal_time) < self.dt:
-                D += meal_size / self.dt  # Convert carbs to glucose rate
+                D += meal_size / self.dt  # Convert carbs to glucose rate (mmol/L per minute)
         return D
     
     def _compute_reward(self, glucose: float) -> float:
@@ -105,15 +152,24 @@ class BergmanEnv(gym.Env):
         Compute reward based on blood glucose level
         Converting from mmol/L to mg/dL (multiply by 18)
         Ideal range: 70-180 mg/dL (3.9-10 mmol/L)
-        """
-        glucose = glucose * 18  # Convert to mg/dL
         
-        if 70 <= glucose <= 180:
-            return 1.0
-        elif glucose < 70:
-            return -((70 - glucose) / 70) ** 2  # Quadratic penalty for hypoglycemia
-        else:
-            return -((glucose - 180) / 180) ** 2  # Quadratic penalty for hyperglycemia
+        Remember that the system is centered around 0, so the ideal range is -70 to 110
+        """
+        # glucose = glucose * 18  # Convert to mg/dL
+        
+        # glucose = np.clip(glucose, 0, 600)  # Clip to prevent instability
+        
+        # if 70 <= glucose <= 180:
+        #     return 1.0
+        # elif glucose < 70:
+        #     return -((70 - glucose) / 70) ** 2  # Quadratic penalty for hypoglycemia
+        # else:
+        #     return -((glucose - 180) / 180) ** 2  # Quadratic penalty for hyperglycemia
+        # glucose needs to be centered around 0
+        
+        # reward is the negative of the glucose value
+        return glucose**2
+    
             
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
         # Scale meal disturbance and action to appropriate ranges
@@ -135,6 +191,11 @@ class BergmanEnv(gym.Env):
         
         # Update internal state
         self.state = (state_tensor + (k1 + 2*k2 + 2*k3 + k4) * self.dt/6).numpy()
+        # Clamp glucose to prevent instability
+        self.state[0] = np.clip(self.state[0], -self.r, self.r)
+        self.state[1] = np.clip(self.state[1], -self.r, self.r)
+        self.state[2] = np.clip(self.state[2], -self.r, self.r)
+        
         
         # Update glucose history
         self.glucose_history.append(self.state[0])
@@ -163,7 +224,7 @@ class BergmanEnv(gym.Env):
         super().reset(seed=seed)
         
         # Initialize with more reasonable values
-        initial_glucose = np.random.uniform(4.0, 10.0)  # In mmol/L (roughly 70-180 mg/dL)
+        initial_glucose = np.random.uniform(4.0, 20.0)  # In mmol/L (roughly 70-180 mg/dL)
         self.state = np.array([
             initial_glucose,
             0.0,  # Initial insulin effect
@@ -204,7 +265,7 @@ def make_bergman_env(CGM_hist_len=4):
     
     return env
 
-if __name__ == "__main__":
+def main():
     # Test the environment
     env = BergmanEnv()
     obs, _ = env.reset()
@@ -221,3 +282,37 @@ if __name__ == "__main__":
         
         if done:
             break 
+        
+# test the equilibrium point of the system
+# the equilibrium point is when the system is at rest
+# the system is at rest when the derivatives are zero
+def test_equilibrium():
+    model = BergmanTrueDynamics()
+    # Initial state (G, X, I)
+    state = torch.tensor([50, 0, 0], dtype=torch.float32)
+    D = 0
+    U = 0
+    print("Initial state:", state)
+    print("Initial derivatives:", model(0, state, D, U))
+    
+    # Find equilibrium point
+    lr = 1
+    max_iters = 10_000_000
+    
+    for i in range(max_iters):
+        # Calculate derivatives
+        derivatives = model(0, state, D, U)
+        
+        # Update state
+        state = state + lr * derivatives # Euler update
+        if i % 10000 == 0:
+            print("Iteration:", i)
+            print("State:", state)
+            print("Derivatives:", derivatives)
+        
+        # Check for convergence
+        if torch.all(torch.abs(derivatives) < 1e-8):
+            print("Converged at iteration", i)
+            break
+if __name__ == "__main__":
+    main()
