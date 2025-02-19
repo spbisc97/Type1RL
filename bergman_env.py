@@ -91,7 +91,7 @@ class BergmanEnv(gym.Env):
     def __init__(
         self,
         dt: float = 5.0,  # 5 minutes
-        simulation_time: float = 24.0 * 60,  # 24 hours in minutes
+        initial_glucose_range: Tuple[float, float] = (-10, 10),  # Initial glucose range
         CGM_hist_len: int = 4,  # Number of glucose measurements to keep
         meal_schedule: Optional[list] = None
     ):
@@ -105,13 +105,12 @@ class BergmanEnv(gym.Env):
         self.dt = dt  # Time step (minutes)
         # total simulation time is 24 hours (1440 minutes)
         # might this be moved outside of the class?
-        self.simulation_time = simulation_time 
         
         self.current_time = 0
         
         # Glucose history settings
         self.CGM_hist_len = CGM_hist_len
-        self.glucose_history = deque(maxlen=CGM_hist_len)
+        self.glucose_history = deque(maxlen=CGM_hist_len+2) # Keep extra for reward calculation
         
         # Define observation space (glucose history)
         self.observation_space = spaces.Box(
@@ -124,9 +123,12 @@ class BergmanEnv(gym.Env):
         # Define action space (insulin infusion rate)
         self.action_space = spaces.Box(
             low=np.array([0.0]),
-            high=np.array([20.0]),  # Reduced from 100 to 1
+            high=np.array([10.0]),  # Reduced from 100 to 1
             dtype=np.float32
         )
+        
+        # Initial glucose range
+        self.initial_glucose_range = initial_glucose_range
         
         # Meal schedule (time in minutes, carbs in grams)
         self.default_meals = [
@@ -148,7 +150,7 @@ class BergmanEnv(gym.Env):
                 D += meal_size / self.dt  # Convert carbs to glucose rate (mmol/L per minute)
         return D
     
-    def _compute_reward(self, glucose: float) -> float:
+    def _compute_reward(self, glucose_history: float) -> float:
         """
         Compute reward based on blood glucose level
         Converting from mmol/L to mg/dL (multiply by 18)
@@ -156,26 +158,25 @@ class BergmanEnv(gym.Env):
         
         Remember that the system is centered around 0, so the ideal range is -70 to 110
         """
-        # glucose = glucose * 18  # Convert to mg/dL
+        # glucose = glucose * 18  # Convert to mg/dL maybe?
         
-        # glucose = np.clip(glucose, 0, 600)  # Clip to prevent instability
+
         
-        # if 70 <= glucose <= 180:
-        #     return 1.0
-        # elif glucose < 70:
-        #     return -((70 - glucose) / 70) ** 2  # Quadratic penalty for hypoglycemia
-        # else:
-        #     return -((glucose - 180) / 180) ** 2  # Quadratic penalty for hyperglycemia
-        # glucose needs to be centered around 0
+
         
         # reward is the negative of the glucose value
-        return -glucose**2 + 10
+        reward =0 
+        #reward for being in the ideal range
+        reward += -np.log(np.abs(glucose_history[-1])+ 1) +np.log(4)
+        #reward for derivative of glucose being zero
+        reward += -np.log(np.abs(glucose_history[-1]-glucose_history[-2])+1) 
+        return reward
     
             
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, dict]:
-        # Scale meal disturbance and action to appropriate ranges
-        D = self._get_meal_disturbance(self.current_time) / 18  # Convert to mmol/L
-        action = action * 0.1  # Scale action to reasonable insulin range
+        # Scale meal disturbance and action to appropriate ranges?
+        D = self._get_meal_disturbance(self.current_time)  # Convert to mmol/L ??
+        action = action  # Scale action to reasonable insulin range
         
         # Convert state and action to tensors
         state_tensor = torch.as_tensor(self.state, dtype=torch.float32)
@@ -193,10 +194,21 @@ class BergmanEnv(gym.Env):
         # Update internal state
         self.state = (state_tensor + (k1 + 2*k2 + 2*k3 + k4) * self.dt/6).numpy()
         # Clamp glucose to prevent instability
-        self.state[0] = np.clip(self.state[0], -self.range, self.range)
-        self.state[1] = np.clip(self.state[1], -self.range, self.range)
-        self.state[2] = np.clip(self.state[2], -self.range, self.range)
+        # self.state[0] = np.clip(self.state[0], -self.range, self.range)
+        # self.state[1] = np.clip(self.state[1], -self.range, self.range)
+        # self.state[2] = np.clip(self.state[2], -self.range, self.range)
         
+        # Check for termination conditions
+        terminated = False
+        truncated = False
+        
+        # Terminate if glucose is out of safe range
+        if abs(self.state[0]) >= 80:
+            terminated = True
+            
+        # if self.current_time >= 1440:  # 24 hours
+        #     terminated = True
+        #     truncated = True
         
         # Update glucose history
         self.glucose_history.append(self.state[0])
@@ -205,10 +217,7 @@ class BergmanEnv(gym.Env):
         self.current_time += self.dt
         
         # Calculate reward
-        reward = self._compute_reward(self.state[0])
-        
-        # Check if episode is done
-        done = self.current_time >= self.simulation_time
+        reward = self._compute_reward(self.glucose_history)
         
         # Additional info
         info = {
@@ -219,27 +228,30 @@ class BergmanEnv(gym.Env):
         }
         
         # Return glucose history as observation
-        return np.array(self.glucose_history), reward, done, False, info
+        glucose_history_obs = np.array(list(self.glucose_history)[-self.CGM_hist_len:], dtype=np.float32)
+        return glucose_history_obs, reward, terminated, truncated, info
     
     def reset(self, seed: Optional[int] = None) -> Tuple[np.ndarray, dict]:
         super().reset(seed=seed)
         
         # Initialize with more reasonable values
-        initial_glucose = np.random.uniform(0.0, 20.0)  # In mmol/L (roughly 70-180 mg/dL)
+        initial_glucose = np.random.uniform(self.initial_glucose_range[0], self.initial_glucose_range[1])
         self.state = np.array([
             initial_glucose,
-            0.0,  # Initial insulin effect
-            0.0   # Initial plasma insulin
+            0.0,
+            0.0
         ], dtype=np.float32)
         
         # Initialize glucose history
         self.glucose_history.clear()
-        for _ in range(self.CGM_hist_len):
+        for _ in range(self.CGM_hist_len + 2):  # +2 for reward calculation
             self.glucose_history.append(initial_glucose)
         
         self.current_time = 0
         
-        return np.array(self.glucose_history), {}
+        # Convert deque to numpy array for observation
+        glucose_history_obs = np.array(list(self.glucose_history)[-self.CGM_hist_len:], dtype=np.float32)
+        return glucose_history_obs, {}
     
     def render(self):
         pass
@@ -248,11 +260,14 @@ def make_bergman_env(CGM_hist_len=4):
     """Factory function to create the Bergman environment"""
     env = BergmanEnv(CGM_hist_len=CGM_hist_len)
     
+        # Add time limit - this will set truncated=True when max steps reached
+    # TODO there is a problem with this wrapper!!!! needs to be before the monitor
+    env = TimeLimit(env, max_episode_steps=288)  # 24 hours with 5-min steps 
+    
     # Add Monitor wrapper
     env = Monitor(env)
     
-    # Add time limit
-    env = TimeLimit(env, max_episode_steps=1440)  # 24 hours with 5-min steps
+
     
     # Wrap in DummyVecEnv and VecNormalize
     # env = DummyVecEnv([lambda: env])
