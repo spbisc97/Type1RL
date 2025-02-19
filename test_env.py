@@ -38,11 +38,11 @@ def test_env(env):
     done = False
     total_reward = 0
     
-    for _ in range(100):
+    for _ in range(10):
         action = env.action_space.sample()
         print(f"Action: {action}")
-        obs, reward, trunc,done, info = env.step(action)
-        print(f"Action: {action}, Reward: {reward}, Done: {done}")
+        obs, reward, done,trunc, info = env.step(action)
+        print(f"Action: {action}, Reward: {reward}, Done: {done} Truncated: {trunc}, Info: {info}")
         total_reward += reward
         if done:
             break

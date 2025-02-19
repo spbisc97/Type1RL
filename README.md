@@ -217,3 +217,40 @@ Both environments follow the Gymnasium interface and provide:
 ├── main.py               # Main training/evaluation script
 └── requirements.txt      # Python dependencies
 ```
+
+## Monitoring Training with TensorBoard
+
+The project uses TensorBoard for monitoring training progress. To view training metrics:
+
+1. Start TensorBoard:
+```bash
+# From the project root directory
+tensorboard --logdir logs
+
+# Or specify a specific agent's logs
+tensorboard --logdir logs/sac_results
+```
+
+2. Open your browser and navigate to:
+```
+http://localhost:6006
+```
+
+TensorBoard will show:
+- Training rewards
+- Episode lengths
+- Learning rates
+- Policy/Value losses
+- Network gradients
+- Other agent-specific metrics
+
+You can compare different runs and agents by selecting them in the TensorBoard interface.
+
+Note: Training logs are saved in the `logs/` directory with the following structure:
+```
+logs/
+├── sac_results/
+├── ppo_results/
+├── td3_results/
+└── dqn_results/
+```
