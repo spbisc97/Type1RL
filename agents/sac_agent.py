@@ -40,7 +40,7 @@ def create_sac_agent(env, tensorboard_log=True):
     model = SAC(
         "MlpPolicy",
         env,
-        action_noise=False,
+        # action_noise=False,
         tensorboard_log=str(LOGS_DIR) if tensorboard_log else None,
         device=device,
         **SAC_CONFIG
@@ -52,7 +52,7 @@ def train_sac(
     env,
     total_timesteps,
     log_interval=100,
-    eval_freq=1000,
+    eval_freq=4000,
     n_eval_episodes=3,
     save_path=None
 ):
@@ -74,11 +74,11 @@ def train_sac(
         env,
         best_model_save_path=str(MODELS_DIR / "sac_best_model"),
         log_path=str(LOGS_DIR / "sac_results"),
-        eval_freq=eval_freq,
+        eval_freq=eval_freq,  # Evaluate every n steps
         n_eval_episodes=n_eval_episodes,
         deterministic=True,
         render=False,
-        verbose=1
+        verbose=1,
     )
     
     # Combine callbacks
