@@ -251,3 +251,9 @@ logs/
 ├── td3_results/
 └── dqn_results/
 ```
+
+
+# Open points and upgrades:
+
+- Continue the learning from a preexisting model
+- Add curriculum learning, increasing the environment difficulty during time
