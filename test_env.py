@@ -3,7 +3,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 import numpy as np
 
-def make_test_env(env_id="LunarLander-v3", continuous=True):
+def make_test_env(env_id="LunarLander-v2", continuous=True):
     """
     Create a test environment to verify algorithm implementations
     
@@ -11,12 +11,10 @@ def make_test_env(env_id="LunarLander-v3", continuous=True):
         env_id: Gymnasium environment ID
         continuous: Whether to use continuous or discrete action space
     """
-    if continuous:
-        env_id = "LunarLanderContinuous-v3"
     
     # Create vectorized environment
     def make_env():
-        env = gym.make(env_id)
+        env = gym.make(env_id,continuous=continuous)
         env = Monitor(env)
         return env
     
