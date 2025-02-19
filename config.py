@@ -34,14 +34,14 @@ PPO_CONFIG = {
     "max_grad_norm": 0.5,
     "vf_coef": 0.5,
     "policy_kwargs": dict(
-        net_arch=dict(pi=[300, 300], qf=[300, 300])
+        net_arch=dict(pi=[32, 32,32], qf=[32,32,32])
     )
 }
 
 # DQN specific settings
 DQN_CONFIG = {
     "learning_rate": 1e-4,
-    "buffer_size": 100000,
+    "buffer_size": 100_000,
     "learning_starts": 5000,
     "batch_size": 128,
     "target_update_interval": 100,
@@ -49,17 +49,17 @@ DQN_CONFIG = {
     "exploration_initial_eps": 1.0,
     "exploration_final_eps": 0.05,
     "policy_kwargs": dict(
-        net_arch=[300, 300]
+        net_arch=[32,32,32]
     )
 }
 
 # SAC specific settings
 SAC_CONFIG = {
     "learning_rate": 1e-3,
-    "buffer_size": 100000,
+    "buffer_size": 100_000,
     "learning_starts": 5000,
-    "batch_size": 128,
-    "tau": 0.005,
+    "batch_size": 256,
+    "tau": 0.05,
     "gamma": 0.99,
     "ent_coef": "auto",
     "target_entropy": "auto",
@@ -67,16 +67,16 @@ SAC_CONFIG = {
     "gradient_steps": -1,
     "policy_kwargs": dict(
         activation_fn=ReLU,
-        net_arch=dict(pi=[300, 300], qf=[300, 300])
+        net_arch=dict(pi=[64,64, 32], qf=[64,64,32])
     )
 }
 
 # TD3 specific settings
 TD3_CONFIG = {
     "learning_rate": 3e-4,
-    "buffer_size": 100000,
+    "buffer_size": 100000, # maybe a smaller buffer size can be used
     "learning_starts": 1000,
-    "batch_size": 128,
+    "batch_size": 256,
     "tau": 0.005,
     "gamma": 0.99,
     "train_freq": (1, "episode"),
@@ -85,7 +85,7 @@ TD3_CONFIG = {
     "target_policy_noise": 0.2,  # TD3 specific
     "target_noise_clip": 0.5,    # TD3 specific
     "policy_kwargs": dict(
-        net_arch=dict(pi=[300, 300], qf=[300, 300])
+        net_arch=dict(pi=[16,16, 16], qf=[16,16,16])
     )
 }
 
